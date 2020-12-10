@@ -1,0 +1,4 @@
+# Additional dockerfile contents that will be appended to ray-ml/Dockerfile
+
+# install tensorflow from conda instead of pip for cuda driver support
+RUN conda install -y tensorflow-gpu

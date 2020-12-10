@@ -1,0 +1,65 @@
+# Staroid project configuration file.
+# Reference https://docs.staroid.com/references/staroid_yaml.html.
+# Use online validator https://staroid.com/site/validator.
+apiVersion: beta/v1
+starRank: # Learn more about StarRank https://staroid.com/site/starrank.
+  rate: 1.0 # community rate.
+  upstream:
+  - project: ray-project/ray
+    weight: 100
+build:
+  skaffold:
+    file: .staroid/skaffold.yaml
+deploy:
+  paramGroups:
+  - name: Cluster configuration
+    collapsed: false
+    params:
+    - name: max_workers
+      description: maximum number of ray workers
+      type: NUMBER
+      defaultValue: 5
+      paths:
+      - Job:launch:spec.template.spec.containers[0].env[1].value
+    - name: Worker node spot instance
+      defaultValue: "true"
+      options:
+      - name: "True"
+        value: "true"
+      - name: "False"
+        value: "false"
+      paths:
+      - Job:launch:spec.template.spec.containers[0].env[5].value
+    - name: Instance type
+      description: Worker instance type
+      defaultValue: "standard-4"
+      options:
+      - name: "standard-2 (2CPU, 8GB mem)"
+        value: "standard-2"
+      - name: "standard-4 (4CPU, 16GB mem)"
+        value: "standard-4"
+      - name: "standard-8 (8CPU, 32GB mem)"
+        value: "standard-8"
+      - name: "gpu-1 (8CPU, 61GB mem)"
+        value: "gpu-1"
+      paths:
+      - Job:launch:spec.template.spec.containers[0].env[6].value
+  - name: Misc
+    collapsed: true
+    params:
+    - name: start-head
+      description: Start ray head node on start. 'true' or 'false'
+      type: STRING
+      optional: false
+      defaultValue: "true"
+      options:
+      - name: "True"
+        value: "true"
+      - name: "False"
+        value: "false"
+      paths:
+      - Job:launch:spec.template.spec.containers[0].env[0].value
+ingress:
+- serviceName: serve
+  port: 8000
+  hideOpenButton: true

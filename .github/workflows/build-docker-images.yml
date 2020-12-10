@@ -1,0 +1,33 @@
+name: Build and Test
+
+on:
+  push:
+    tags-ignore:
+      - '*.*'
+    branches:
+      - master
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version:
+        - 3.6.9
+        - 3.7.7
+        - 3.8.3
+    steps:
+    - name: Checkout latest code
+      uses: actions/checkout@v2
+    - name: Clone and patch
+      run: |
+        .staroid/build.sh ${{ matrix.python-version }}
+      env:
+        BUILD_WHEEL: "false"
+        BUILD_WHEEL_SINGLE_VERSION: "true"
+        IMAGE: opendatastudio/ray:latest
+        PUSH_IMAGE: "false"
+    - name: Print image
+      run: |
+        docker images

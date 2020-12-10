@@ -1,0 +1,53 @@
+name: Build and Test
+
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version:
+        - 3.6.9
+        - 3.7.7
+        - 3.8.3
+    env:
+      DEFAULT_PYTHON_VERSION: 3.7.7
+    steps:
+    - name: Checkout latest code
+      uses: actions/checkout@v2
+    - name: Get the version
+      id: get_version
+      run: echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\//}
+      # access it through ${{ steps.get_version.outputs.VERSION }}
+    - name: Clone and patch
+      run: |
+        .staroid/build.sh ${{ matrix.python-version }}
+      env:
+        BUILD_WHEEL: "true"
+        BUILD_WHEEL_SINGLE_VERSION: "true"
+        IMAGE: opendatastudio/ray:latest
+        PUSH_IMAGE: "false"
+    - name: Tag image
+      run: |
+        docker tag opendatastudio/ray:latest opendatastudio/ray:latest-py${{ matrix.python-version }}
+        docker tag opendatastudio/ray:latest opendatastudio/ray:${{ steps.get_version.outputs.VERSION }}-py${{ matrix.python-version }}
+
+        if [ "$DEFAULT_PYTHON_VERSION" == "${{ matrix.python-version }}" ]; then
+          docker tag opendatastudio/ray:latest opendatastudio/ray:${{ steps.get_version.outputs.VERSION }}
+        fi
+    - name: Push image
+      run: |-
+        docker images
+        echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
+
+        docker push opendatastudio/ray:latest-py${{ matrix.python-version }}
+        docker push opendatastudio/ray:${{ steps.get_version.outputs.VERSION }}-py${{ matrix.python-version }}
+
+        if [ "$DEFAULT_PYTHON_VERSION" == "${{ matrix.python-version }}" ]; then
+          docker push opendatastudio/ray:latest
+          docker push opendatastudio/ray:${{ steps.get_version.outputs.VERSION }}
+        fi
